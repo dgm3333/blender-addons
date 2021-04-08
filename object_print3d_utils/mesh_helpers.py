@@ -207,3 +207,200 @@ def face_is_distorted(ele, angle_distort):
             return True
 
     return False
+
+
+
+
+
+
+# DGM: TODO: decide to delete or keep - The following is from modified version by Agnieszka Pas
+def object_merge(context, objects):
+    """
+    Caller must remove.
+    """
+
+    import bpy
+
+    def cd_remove_all_but_active(seq):
+        tot = len(seq)
+        if tot > 1:
+            act = seq.active_index
+            for i in range(tot - 1, -1, -1):
+                if i != act:
+                    seq.remove(seq[i])
+
+    scene = context.scene
+    layer = context.view_layer
+    layer_collection = context.layer_collection or layer.active_layer_collection
+    scene_collection = layer_collection.collection
+
+    # deselect all
+    for obj in scene.objects:
+        obj.select_set(False)
+
+    # add empty object
+    mesh_base = bpy.data.meshes.new(name="~tmp~")
+    obj_base = bpy.data.objects.new(name="~tmp~", object_data=mesh_base)
+    scene_collection.objects.link(obj_base)
+    layer.objects.active = obj_base
+    obj_base.select_set(True)
+
+    depsgraph = context.evaluated_depsgraph_get()
+
+    # loop over all meshes
+    for obj in objects:
+        if obj.type != 'MESH':
+            continue
+
+        # convert each to a mesh
+        obj_eval = obj.evaluated_get(depsgraph)
+        mesh_new = obj_eval.to_mesh()
+
+        # remove non-active uvs/vcols
+        cd_remove_all_but_active(mesh_new.vertex_colors)
+        cd_remove_all_but_active(mesh_new.uv_layers)
+
+        # join into base mesh
+        obj_new = bpy.data.objects.new(name="~tmp-new~", object_data=mesh_new)
+        base_new = scene_collection.objects.link(obj_new)
+        obj_new.matrix_world = obj.matrix_world
+
+        fake_context = context.copy()
+        fake_context["active_object"] = obj_base
+        fake_context["selected_editable_objects"] = [obj_base, obj_new]
+
+        bpy.ops.object.join(fake_context)
+        del base_new, obj_new
+
+        # remove object and its mesh, join does this
+        # scene_collection.objects.unlink(obj_new)
+        # bpy.data.objects.remove(obj_new)
+
+        obj_eval.to_mesh_clear()
+
+    layer.update()
+
+    # return new object
+    return obj_base
+
+
+
+
+
+#----------------------------------------------------------
+# File make_solid_helpers.py
+# Helper functions, to be used by MakeSolid class .
+#----------------------------------------------------------
+
+import bpy
+import bmesh
+
+
+def prepare_meshes():
+    bpy.ops.object.make_single_user(object=True, obdata=True)
+    bpy.ops.object.convert()
+    bpy.ops.object.join()
+
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    # selection dance for proper results
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.context.tool_settings.mesh_select_mode = (True, True, True)
+
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+    bpy.ops.mesh.separate(type='LOOSE')
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+
+def prepare_mesh(obj, select_action):
+    scene = bpy.context.scene
+    layer = bpy.context.view_layer
+
+    active_object = layer.objects.active
+    layer.objects.active = obj
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    # reveal hidden vertices in mesh
+    bpy.ops.mesh.reveal()
+
+    # mesh cleanup
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.separate(type='LOOSE')
+    bpy.ops.mesh.delete_loose()
+
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.remove_doubles(threshold=0.0001)
+
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.fill_holes(sides=0)
+
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.quads_convert_to_tris()
+
+    # back to previous settings
+    bpy.ops.mesh.select_all(action=select_action)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    layer.objects.active = active_object
+
+
+def cleanup_mesh(obj):
+    mesh = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+    bm.to_mesh(mesh)
+    bm.free()
+
+
+def add_modifier(active, selected):
+    bool_modifier = active.modifiers.new(name='Boolean', type='BOOLEAN')
+    bool_modifier.object = selected
+    bool_modifier.show_viewport = False
+    bool_modifier.show_render = False
+    bool_modifier.operation = 'UNION'
+    try:
+        bool_modifier.solver = 'CARVE'
+    except:
+        pass
+
+    bpy.ops.object.modifier_apply(modifier='Boolean')
+
+    view_layer = bpy.context.view_layer
+    print ("layer_collection.name = " + bpy.context.layer_collection.name)
+    print ("view_layer.active_layer_collection.name = " + view_layer.active_layer_collection.name)
+    layer_collection = bpy.context.layer_collection or view_layer.active_layer_collection
+    collection = layer_collection.collection
+    collection.objects.unlink(selected)
+
+    bpy.data.objects.remove(selected)
+
+
+def make_solid_batch():
+    active = bpy.context.active_object
+    selected = bpy.context.selected_objects
+    selected.remove(active)
+
+    prepare_mesh(active, 'DESELECT')
+
+    for sel in selected:
+        prepare_mesh(sel, 'SELECT')
+        add_modifier(active, sel)
+        cleanup_mesh(active)
+
+
+def is_manifold(self):
+    mesh = bpy.context.active_object.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+
+    for edge in bm.edges:
+        if not edge.is_manifold:
+            bm.free()
+            self.report({'ERROR'}, "Boolean operation result is non-manifold")
+            return False
+
+    bm.free()
+    return True
+
+

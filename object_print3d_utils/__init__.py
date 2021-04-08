@@ -16,18 +16,28 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8 compliant>
+# <pep8-80 compliant>
+
+
+# 2019 - forked by Agnieszka Pas to: https://github.com/agapas/3d-print-toolbox-modified
+#      - added various repair tools (but not merged with main branch)
+# 2020 - Blender official version updated
+# 2021 - forked 2020 official version and merged Agnieszka updates
+
+
 
 bl_info = {
-    "name": "3D-Print Toolbox",
-    "author": "Campbell Barton",
-    "blender": (2, 82, 0),
-    "location": "3D View > Sidebar",
+    "name": "3D Print Toolbox",
     "description": "Utilities for 3D printing",
-    "doc_url": "{BLENDER_MANUAL_URL}/addons/mesh/3d_print_toolbox.html",
-    "support": 'OFFICIAL',
-    "category": "Mesh",
+    "author": "Campbell Barton, Agnieszka Pas, David Mckenzie",
+    "version": (2, 1, 2),
+    "blender": (2, 80, 0),
+    "location": "3D View > Sidebar",
+    "warning": "",
+    'wiki_url': '{BLENDER_MANUAL_URL}/addons/mesh/3d_print_toolbox.html',
+    "category": "Mesh"
 }
+
 
 
 if "bpy" in locals():
@@ -54,6 +64,7 @@ else:
         ui,
         operators,
     )
+
 
 
 class SceneProperties(PropertyGroup):
@@ -125,6 +136,7 @@ class SceneProperties(PropertyGroup):
     )
 
 
+
 classes = (
     SceneProperties,
 
@@ -132,6 +144,7 @@ classes = (
     ui.VIEW3D_PT_print3d_cleanup,
     ui.VIEW3D_PT_print3d_transform,
     ui.VIEW3D_PT_print3d_export,
+    ui.VIEW3D_PT_print3d_workarea,
 
     operators.MESH_OT_print3d_info_volume,
     operators.MESH_OT_print3d_info_area,
@@ -143,12 +156,25 @@ classes = (
     operators.MESH_OT_print3d_check_sharp,
     operators.MESH_OT_print3d_check_overhang,
     operators.MESH_OT_print3d_check_all,
+
     operators.MESH_OT_print3d_clean_distorted,
-    # operators.MESH_OT_print3d_clean_thin,
+    operators.MESH_OT_print3d_clean_thin,
     operators.MESH_OT_print3d_clean_non_manifold,
+
+    operators.MESH_OT_print3d_clean_degenerates,
+    operators.MESH_OT_print3d_clean_doubles,
+    operators.MESH_OT_print3d_clean_loose,
+    operators.MESH_OT_print3d_clean_non_planars,
+    operators.MESH_OT_print3d_clean_concaves,
+    operators.MESH_OT_print3d_clean_triangulates,
+    operators.MESH_OT_print3d_clean_holes,
+    operators.MESH_OT_print3d_clean_limited,
+
+
     operators.MESH_OT_print3d_select_report,
     operators.MESH_OT_print3d_scale_to_volume,
     operators.MESH_OT_print3d_scale_to_bounds,
+
     operators.MESH_OT_print3d_export,
 )
 

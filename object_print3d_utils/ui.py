@@ -70,12 +70,17 @@ class VIEW3D_PT_print3d_analyze(View3DPrintPanel, Panel):
 
         print_3d = context.scene.print_3d
 
-        # TODO, presets
+        layout.label(text="TODO:")
+        layout.label(text="Presets")
+
 
         layout.label(text="Statistics")
         row = layout.row(align=True)
-        row.operator("mesh.print3d_info_volume", text="Volume")
-        row.operator("mesh.print3d_info_area", text="Area")
+        #TODO: add the stats here when button clicked rather than down in the report section
+        row.operator("mesh.print3d_info_volume", text="Volume: TODO")
+#        row.prop(print_3d, "area", text="")
+        row.operator("mesh.print3d_info_area", text="Area: TODO")
+#        row.prop(print_3d, "area", text="")
 
         layout.label(text="Checks")
         col = layout.column(align=True)
@@ -96,6 +101,17 @@ class VIEW3D_PT_print3d_analyze(View3DPrintPanel, Panel):
         row = col.row(align=True)
         row.operator("mesh.print3d_check_overhang", text="Overhang")
         row.prop(print_3d, "angle_overhang", text="")
+        row = col.row(align=True)
+        layout.label(text="TODO:")
+        row = col.row(align=True)
+        layout.label(text="print3d_check_islands+orphans")        
+        row = col.row(align=True)
+        layout.label(text="print3d_check_weak_structures")        
+        row = col.row(align=True)
+        layout.label(text="print3d_check_resin_traps")  
+        row = col.row(align=True)
+        layout.label(text="print3d_check_touching_boundaries")  
+
         layout.operator("mesh.print3d_check_all", text="Check All")
 
         self.draw_report(context)
@@ -114,8 +130,30 @@ class VIEW3D_PT_print3d_cleanup(View3DPrintPanel, Panel):
         row.operator("mesh.print3d_clean_distorted", text="Distorted")
         row.prop(print_3d, "angle_distort", text="")
         layout.operator("mesh.print3d_clean_non_manifold", text="Make Manifold")
+
+        #Agnieszka Pas Cleaners
+        layout.operator("mesh.print3d_clean_degenerates", text="Dissolve Degenerates")
+        layout.operator("mesh.print3d_clean_doubles", text="Remove Doubles")
+        layout.operator("mesh.print3d_clean_loose", text="Delete Loose")
+        layout.operator("mesh.print3d_clean_non_planars", text="Split Non Planar Faces")
+        layout.operator("mesh.print3d_clean_concaves", text="Split Concave Faces")
+        layout.operator("mesh.print3d_clean_triangulates", text="Triangulate Faces")
+        layout.operator("mesh.print3d_clean_holes", text="Fill Holes")
+        layout.operator("mesh.print3d_clean_limited", text="Simplify Mesh (Limited Dissolve)")
+
+        layout.label(text="TODO:")
+        layout.label(text="print3d_clean_resin_traps")
+        layout.label(text="print3d_clean_thin")
+        layout.label(text="print3d_clean_fix_orphans")
+        layout.label(text="print3d_clean_normals_out")
+
+        '''
+
         # XXX TODO
-        # layout.operator("mesh.print3d_clean_thin", text="Wall Thickness")
+
+        layout.operator("mesh.print3d_clean_thin", text="Wall Thickness")
+        layout.operator("mesh.print3d_clean_normals_out", text="Normals to Outside")
+        '''
 
 
 class VIEW3D_PT_print3d_transform(View3DPrintPanel, Panel):
@@ -125,11 +163,17 @@ class VIEW3D_PT_print3d_transform(View3DPrintPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        layout.label(text="Scale To")
+        layout.label(text="print3d_add_supports")
+
+        layout.label(text="Scale To:-")
         row = layout.row(align=True)
         row.operator("mesh.print3d_scale_to_volume", text="Volume")
         row.operator("mesh.print3d_scale_to_bounds", text="Bounds")
 
+        row = layout.row(align=True)
+        layout.label(text="TODO: print3d_merge_selected_into_single_solid")
+
+#        row.operator("mesh.print3d_merge_selected_into_single_solid", text="Merge To Solid")
 
 class VIEW3D_PT_print3d_export(View3DPrintPanel, Panel):
     bl_label = "Export"
@@ -150,3 +194,29 @@ class VIEW3D_PT_print3d_export(View3DPrintPanel, Panel):
 
         layout.prop(print_3d, "export_format")
         layout.operator("mesh.print3d_export", text="Export", icon='EXPORT')
+
+        layout.label(text="TODO: export direct to SLA voxel format")
+
+
+#DGM TODO: Merge this in
+class VIEW3D_PT_print3d_workarea(View3DPrintPanel, Panel):
+    bl_label = "Generate Workarea"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        print_3d = context.scene.print_3d
+
+        col = layout.column(align=True)
+        layout.label(text="TODO:")
+        layout.label(text="print3d_setup_illuminate")
+        layout.label(text="print3d_setup_printer_bed")
+        layout.label(text="print3d_setup_printer_volume")
+        layout.label(text="print3d_setup_printer_resolution")
+
+        '''
+        layout.operator("mesh.print3d_setup_illuminate", text="Illuminate Visible")
+        layout.operator("mesh.print3d_setup_printer_bed", text="Add Printer Bed")
+        layout.operator("mesh.print3d_setup_printer_volume", text="Add Printer Volume")
+        layout.operator("mesh.print3d_setup_printer_resolution", text="Set Printer Resolution")
+        '''
